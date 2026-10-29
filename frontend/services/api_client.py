@@ -13,7 +13,10 @@ API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000/api/v1")
 
 class APIClient:
     def __init__(self, base_url: str = API_BASE_URL):
-        self.base_url = base_url.rstrip("/")
+        url = base_url.rstrip("/")
+        if not url.endswith("/api/v1"):
+            url = f"{url}/api/v1"
+        self.base_url = url
 
     def _headers(self, token: Optional[str] = None) -> Dict[str, str]:
         headers = {"Content-Type": "application/json"}

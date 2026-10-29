@@ -59,12 +59,16 @@ class Settings(BaseModel):
     FRONTEND_PORT: int = Field(default_factory=lambda: int(os.getenv("FRONTEND_PORT", "8501")))
     
     # CORS
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:8501",
-        "http://127.0.0.1:8501",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000"
-    ]
+    CORS_ORIGINS: List[str] = Field(
+        default_factory=lambda: [
+            orig.strip()
+            for orig in os.getenv(
+                "CORS_ORIGINS",
+                "http://localhost:8501,http://127.0.0.1:8501,http://localhost:8000,http://127.0.0.1:8000,*"
+            ).split(",")
+            if orig.strip()
+        ]
+    )
     
     # AI Assistant
     AI_PROVIDER: str = Field(default_factory=lambda: os.getenv("AI_PROVIDER", "gemini"))
