@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: wealthos_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wealthos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wealthos_secure_password}
+      POSTGRES_DB: ${POSTGRES_DB:-wealthos_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wealthos -d wealthos_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wealthos_backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://wealthos:wealthos_secure_password@db:5432/wealthos_db
+      SECRET_KEY: ${SECRET_KEY:-wealthos_production_jwt_secret_key_change_me_in_prod}
+      ENVIRONMENT: production
+      DEBUG: "false"
+      CORS_ORIGINS: "http://localhost:8501,http://127.0.0.1:8501"
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: wealthos_frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      API_BASE_URL: http://backend:8000/api/v1
+    ports:
+      - "8501:8501"
+
+volumes:
+  pgdata:
